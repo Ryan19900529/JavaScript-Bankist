@@ -131,3 +131,51 @@ const handleHover = function (e) {
 nav.addEventListener('mouseover', handleHover.bind(0.5));
 
 nav.addEventListener('mouseout', handleHover.bind(1));
+
+// Sticky navigation (low performance)
+// const initialCoords = section1.getBoundingClientRect();
+
+// window.addEventListener('scroll', function () {
+//   if (this.window.scrollY > initialCoords.top) {
+//     nav.classList.add('sticky');
+//   } else {
+//     nav.classList.remove('sticky');
+//   }
+// });
+
+// Sticky navigation with Intersection Observer API
+// const callback = function (entries, Observer) {
+//   entries.forEach(e => {
+//     console.log(e);
+//   });
+//   // console.log(entries);
+// };
+// const object = {
+//   root: null, // null => to the whole window
+//   threshold: [0.1, 0.5],
+// };
+// const observer = new IntersectionObserver(callback, object);
+// observer.observe(section1);
+
+const header = document.querySelector('.header');
+const headerHeight = nav.getBoundingClientRect().height;
+// console.log(headerHeight);
+
+const stickyNav = function (entries) {
+  // console.log(entries);
+  const [entry] = entries; // == entries[0], extracting the first element from the entries array
+  // console.log(entry);
+  if (!entry.isIntersecting) {
+    nav.classList.add('sticky');
+  } else {
+    nav.classList.remove('sticky');
+  }
+};
+
+const headerObserver = new IntersectionObserver(stickyNav, {
+  root: null,
+  threshold: 0, // when the target is invisible
+  // rootMargin: '-90px', // will be applied to the outside of the target element, because it's minus value
+  rootMargin: `-${headerHeight}px`,
+});
+headerObserver.observe(header);
