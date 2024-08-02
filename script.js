@@ -151,7 +151,7 @@ nav.addEventListener('mouseout', handleHover.bind(1));
 //   // console.log(entries);
 // };
 // const object = {
-//   root: null, // null => to the whole window
+//   root: null, // null => to the whole window (viewport)
 //   threshold: [0.1, 0.5],
 // };
 // const observer = new IntersectionObserver(callback, object);
@@ -163,7 +163,7 @@ const headerHeight = nav.getBoundingClientRect().height;
 
 const stickyNav = function (entries) {
   // console.log(entries);
-  const [entry] = entries; // == entries[0], extracting the first element from the entries array
+  const [entry] = entries; // == entries[0], extracting the first element from the entries array (there's only one threshold, so just extracting the first element)
   // console.log(entry);
   if (!entry.isIntersecting) {
     nav.classList.add('sticky');
@@ -179,3 +179,121 @@ const headerObserver = new IntersectionObserver(stickyNav, {
   rootMargin: `-${headerHeight}px`,
 });
 headerObserver.observe(header);
+
+// Reveal sections
+const allSections = document.querySelectorAll('.section');
+const revealSection = function (entries, observer) {
+  const [entry] = entries;
+  // console.log(entry);
+  if (!entry.isIntersecting) return;
+  entry.target.classList.remove('section--hidden');
+  observer.unobserve(entry.target);
+};
+const sectionObserver = new IntersectionObserver(revealSection, {
+  root: null,
+  threshold: 0.15,
+});
+
+allSections.forEach(section => {
+  // section.classList.add('section--hidden');
+  sectionObserver.observe(section);
+});
+
+// Lazy loading
+const imgTargets = document.querySelectorAll('img[data-src]');
+const loadImg = function (entries, observer) {
+  const [entry] = entries;
+  // console.log(entry);
+  if (!entry.isIntersecting) return;
+
+  // replace src with data-src
+  entry.target.src = entry.target.dataset.src;
+
+  entry.target.addEventListener('load', function () {
+    entry.target.classList.remove('lazy-img');
+  });
+  observer.unobserve(entry.target);
+};
+
+const imgObserver = new IntersectionObserver(loadImg, {
+  root: null,
+  threshold: 0,
+  rootMargin: '200px',
+});
+
+imgTargets.forEach(img => imgObserver.observe(img));
+
+// Slider
+const slides = document.querySelectorAll('.slide');
+const slider = document.querySelector('.slider');
+const btnRight = document.querySelector('.slider__btn--right');
+const btnLeft = document.querySelector('.slider__btn--left');
+let curSlide = 0;
+const maxSlide = slides.length;
+const dotContainer = document.querySelector('.dots');
+
+const createDots = function () {
+  slides.forEach((_, i) => {
+    dotContainer.insertAdjacentHTML(
+      'beforeend',
+      `<button class="dots__dot" data-slide="${i}"></button>`
+    );
+  });
+};
+
+createDots();
+
+const activateDot = function (slide) {
+  document
+    .querySelectorAll('.dots__dot')
+    .forEach(dot => dot.classList.remove('dots__dot--active'));
+  document
+    .querySelector(`.dots__dot[data-slide="${slide}"]`)
+    .classList.add('dots__dot--active');
+};
+activateDot(0);
+
+const goToSlide = function (curSlide) {
+  slides.forEach((s, i) => {
+    s.style.transform = `translateX(${100 * (i - curSlide)}%)`;
+  });
+};
+goToSlide(0);
+
+const nextSlide = function () {
+  if (curSlide === maxSlide - 1) {
+    curSlide = 0;
+  } else {
+    curSlide++;
+  }
+  goToSlide(curSlide);
+  activateDot(curSlide);
+};
+
+const prevSlide = function () {
+  if (curSlide === 0) {
+    curSlide = maxSlide - 1;
+  } else {
+    curSlide--;
+  }
+  goToSlide(curSlide);
+  activateDot(curSlide);
+};
+
+btnRight.addEventListener('click', nextSlide);
+btnLeft.addEventListener('click', prevSlide);
+
+document.addEventListener('keydown', function (e) {
+  // console.log(e);
+  if (e.key === 'ArrowRight') nextSlide();
+  e.key === 'ArrowLeft' && prevSlide(); //short circuiting
+});
+
+dotContainer.addEventListener('click', function (e) {
+  if (e.target.classList.contains('dots__dot')) {
+    // const slide = e.target.dataset.slide;
+    const { slide } = e.target.dataset;
+    goToSlide(slide);
+    activateDot(slide);
+  }
+});
